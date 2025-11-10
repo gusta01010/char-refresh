@@ -3,7 +3,7 @@ const path = require('path');
 const chokidar = require('chokidar');
 
 module.exports.info = {
-  id: 'auto-refresh',
+  id: 'characters-autorefresh',
   name: 'Auto-refresh Character folder',
   description: 'Signals the UI whenever the character folder changes'
 };
