@@ -15,6 +15,20 @@ module.exports.init = async function init(router) {
   const CHAR_DIR = path.resolve(__dirname, '..', '..', 'data', 'default-user', 'characters');
   let lastChange = Date.now();
 
+  // Initialize cache of known files to distinguish between new files and atomic updates
+  const knownFiles = new Set();
+  try {
+    if (fs.existsSync(CHAR_DIR)) {
+      fs.readdirSync(CHAR_DIR).forEach(file => {
+        if (file.match(/\.(png|json|webp)$/i)) {
+          knownFiles.add(file);
+        }
+      });
+    }
+  } catch (e) {
+    console.error('[auto-refresh] Error reading char dir:', e);
+  }
+
   router.get('/last-change', (_req, res) =>
     res.json({ lastChange })
   );
@@ -25,12 +39,28 @@ module.exports.init = async function init(router) {
   let debounceTimer;
   fs.watch(CHAR_DIR, (eventType, filename) => {
     if (!filename || !filename.match(/\.(png|json|webp)$/i)) return;
-    
-    if (eventType === 'change') return; // ignore 'change' events (modifications), only handle 'rename' (add/remove)
+
+    // ignore 'change' events (modifications)
+    if (eventType === 'change') return;
+
+    // check if it's a real add/remove or just an atomic save (modification)
+    const filePath = path.join(CHAR_DIR, filename);
+    const exists = fs.existsSync(filePath);
+    const wasKnown = knownFiles.has(filename);
+
+    // if file exists and was already known, it's a modification (likely atomic save) -> Ignore
+    if (exists && wasKnown) return;
+
+    // if file doesn't exist and wasn't known, it's irrelevant -> Ignore
+    if (!exists && !wasKnown) return;
+
+    // update cache
+    if (exists) knownFiles.add(filename);
+    else knownFiles.delete(filename);
     
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      console.log(`[auto-refresh] ${eventType}: ${filename}`);
+      console.log(`[auto-refresh] ${exists ? 'Added' : 'Removed'}: ${filename}`);
       lastChange = Date.now();
     }, 300);
   });
