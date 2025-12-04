@@ -26,6 +26,8 @@ module.exports.init = async function init(router) {
   fs.watch(CHAR_DIR, (eventType, filename) => {
     if (!filename || !filename.match(/\.(png|json|webp)$/i)) return;
     
+    if (eventType === 'change') return; // ignore 'change' events (modifications), only handle 'rename' (add/remove)
+    
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       console.log(`[auto-refresh] ${eventType}: ${filename}`);
