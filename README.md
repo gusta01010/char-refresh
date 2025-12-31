@@ -71,7 +71,3 @@ Once installed and enabled, the extension works automatically. There is no UI to
 ## License
 
 This project is licensed under the [MIT License](./LICENSE) - see the `LICENSE` file for details.
-
-## Credits
-
--   Uses the [chokidar](https://github.com/paulmillr/chokidar) library for file system watching.
